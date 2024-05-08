@@ -1,0 +1,9 @@
+[submodule "nextjs-starter"]
+	path = nextjs-starter
+	url = git@github.com:hd719/nexjs-starter.git
+[submodule "code-snippets"]
+	path = code-snippets
+	url = git@github.com:hd719/code-snippets.git
+[submodule "discuss"]
+	path = discuss
+	url = git@github.com:hd719/discuss.git
