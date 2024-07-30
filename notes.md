@@ -203,3 +203,8 @@ export async function generateStaticParams() {
 - The reason because in our codebase we have a <Header /> component that encapsulates all of the pages in our app, due to this all routes will be considered dynamic routes because the header is on all pages
 
 ## Content Streaming
+
+## Query Strings (tricky check slides for page components (server and client))
+
+- Client components with `useSearchParams` hook will need to wrapped with `Suspense` otherwise you will get a strange warning at build time
+- Any page that references `searchParams` will be marked as dynamic for purposes of build time caching
