@@ -201,3 +201,5 @@ export async function generateStaticParams() {
 ```
 
 - The reason because in our codebase we have a <Header /> component that encapsulates all of the pages in our app, due to this all routes will be considered dynamic routes because the header is on all pages
+
+## Content Streaming
