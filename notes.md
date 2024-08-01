@@ -204,6 +204,12 @@ export async function generateStaticParams() {
 
 ## Content Streaming
 
+## Request Memoization
+
+- In our case we are going to pass the prop `postId` to all of our components and pass our function `fetchCommentsByPostId(postId)` -> the issue is we are doing uncessary data fetching
+- We can use request memoization to cache functions (also database queries) that have the same URL and method
+
+
 ## Query Strings (tricky check slides for page components (server and client))
 
 - Client components with `useSearchParams` hook will need to wrapped with `Suspense` otherwise you will get a strange warning at build time
