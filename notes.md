@@ -209,8 +209,26 @@ export async function generateStaticParams() {
 - In our case we are going to pass the prop `postId` to all of our components and pass our function `fetchCommentsByPostId(postId)` -> the issue is we are doing uncessary data fetching
 - We can use request memoization to cache functions (also database queries) that have the same URL and method
 
-
 ## Query Strings (tricky check slides for page components (server and client))
 
 - Client components with `useSearchParams` hook will need to wrapped with `Suspense` otherwise you will get a strange warning at build time
 - Any page that references `searchParams` will be marked as dynamic for purposes of build time caching
+
+## Hosting
+
+- [Hosting](https://www.youtube.com/watch?v=wIkn3aG3rr8)
+
+## Sessions
+
+## Middleware
+
+- Create a middleware.ts file and add this line `export { default } from "next-auth/middleware";` requires the entire app to be authenticated
+- Can add certain routes
+
+```jsx
+export { default } from "next-auth/middleware";
+
+export const config = {
+  matcher: ["/create-user", "/client-member", "/server-member", "/public"],
+};
+```
