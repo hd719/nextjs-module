@@ -10,3 +10,6 @@
 [submodule "nextjs-auth"]
 	path = nextjs-auth
 	url = https://github.com/hd719/nextjs-auth
+[submodule "nextjs-chatgpt-app"]
+	path = nextjs-chatgpt-app
+	url = https://github.com/hd719/nextjs-chatgpt-app
