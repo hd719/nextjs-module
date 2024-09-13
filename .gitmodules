@@ -7,3 +7,6 @@
 [submodule "discuss"]
 	path = discuss
 	url = git@github.com:hd719/discuss.git
+[submodule "nextjs-auth"]
+	path = nextjs-auth
+	url = https://github.com/hd719/nextjs-auth
