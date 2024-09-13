@@ -136,7 +136,7 @@ async function createSnippet(formData: FormData) {
 - Time base caching: stale-while-revalidate
 
 ```jsx
-  export const revalidate = 60; // 1 minute 
+  export const revalidate = 60; // 1 minute
   export const getServerSideProps = async (context) => {
     return {
       props: {
@@ -232,3 +232,10 @@ export const config = {
   matcher: ["/create-user", "/client-member", "/server-member", "/public"],
 };
 ```
+
+## Deployment
+
+- Vercel
+- SST (Serverless Stack Toolkit) using AWS
+- Containerization NextJS app using Docker
+- OpenNext
