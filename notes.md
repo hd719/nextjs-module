@@ -95,12 +95,152 @@ async function createSnippet(formData: FormData) {
 
 ## Client Components
 
-- Run on the client
+- Run on the client and server **(Hydrated on the client)**
 - Run hooks, use state, use effect, etc.
 - Add `use client` to the top of the file to make it a client component
 - Cannot import server components into client components
 - Can import client components into server components
 - **Server actions cannot be called from client components** , however you can pass down server actions from server components to client components
+- When a component is promoted to a client component, you can use hooks inside it without explicitly marking it with 'use client'
+- Bringing useState into the Container component, we could toggle the visibility of the children based on the state without any issues.
+- The Container component uses the useState hook to manage the visibility state, and it works as expected without the need for the 'use client' directive.
+
+## Why use server components over client components?
+
+- This is huge because the server-component code is not sent to the client, which not only reduces the size of the bundle that you send to the client, it also speeds up the application because there's less code to run on the client
+- Good for security too, because that RSC code is only run on the server. So you don't have to worry about leakage of secrets out to the client, because that code never actually gets to the client
+- Loading data on RSE is a huge win because it makes it very easy to call back-end services and then render the result and easily send data to the client
+- faster because you're probably talking to services in the same cluster as opposed to over the open internet
+- RSC's make it so much easier to load data into your application and to do it securely
+
+## Tips
+
+- **DO NOT USE CONTEXT OR EXTERNAL STATE MANAGERS** in server components, use props instead or take advantage of the nextjs caching
+- Do not send functions to client components specifically event handlers instead use server actions
+- **Client components cannot directly invoke asynchronous server components**
+
+`Home.tsx`
+
+```jsx
+export default async function Home() {
+  return (
+    <div>
+      <ClientComponent />
+      <ServerComponent>
+    </div>
+  )
+}
+```
+
+`ClientComponent.tsx`
+
+```jsx
+export default async function ClientComponent() {
+  return (
+    <ServerComponent />
+  )
+}
+```
+
+- Trying to render a server component directly inside a client component will result in an error
+
+- Instead use **COMPOSITION** or pass the server component as prop
+
+`Home.tsx`
+
+```jsx
+export default async function Home() {
+  return (
+    <div>
+      <ClientComponent content={<ServerComponent />}>
+        <ServerComponent>
+      </ClientComponent>
+      <ServerComponent>
+    </div>
+  )
+}
+```
+
+`ClientComponent.tsx`
+
+```jsx
+export default async function ClientComponent({children, content}) {
+  return (
+    <>
+      <div>{children}</div>
+      <div>{content}</div>
+    </>
+
+  )
+}
+```
+
+- This allows the client component to contain the server component without directly invoking it
+- By passing the server component as a child to the client component, we can successfully compose them together
+- The server component remains a server component, while the client component acts as a container.
+
+- This is the same idea we saw with the SessionProvider component
+- By wrapping the application with SessionProvider, you don't automatically turn everything inside it into client components
+Instead, the client component can contain server components through composition
+
+### Using as Prop Deep Dive
+
+- This will work `content={<ServerComponent />}` this will "not" `content={() => <ServerComponent />}`
+
+`Home.tsx`
+
+```jsx
+export default async function Home() {
+  return (
+    <div>
+      <ClientComponent content={<ServerComponent />}>
+        <ServerComponent>
+      </ClientComponent>
+      <ServerComponent>
+    </div>
+  )
+}
+```
+
+`ClientComponent.tsx`
+
+```jsx
+export default async function ClientComponent({content}) {
+  return (
+    <div>{content}</div>
+  )
+}
+```
+
+- Flexibility
+
+```jsx
+export default async function Home() {
+  return (
+    <div>
+      <ClientComponent content={async () => {
+        "use server";
+        return <ServerComponent />;
+      }}>
+        <ServerComponent>
+      </ClientComponent>
+      <ServerComponent>
+    </div>
+  )
+}
+```
+
+`ClientComponent.tsx`
+
+```jsx
+export default async function ClientComponent({content: () => Promise<React.ReactNode>}) {
+  return (
+    <div>
+      <Suspense>{content()}<Suspense/>
+    </div>
+  )
+}
+```
 
 ## Next Server
 
