@@ -85,6 +85,13 @@ async function createSnippet(formData: FormData) {
 }
 ```
 
+## Got ya's with Server Actions
+
+- When fetching data from server actions the request method to fetch is a POST, which means we can't cache the request
+- Making GET requests to the server using server actions will always result in POST requests
+- If you were to use an API route, you get to control the verb and could use GET to fetch the data and have it stay as a GET
+- API routes also allow you to control the format of the request, which you can't do with server actions
+
 ## Server Components
 
 - Run on the server
