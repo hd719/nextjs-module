@@ -85,6 +85,10 @@ async function createSnippet(formData: FormData) {
 }
 ```
 
+- There are two different ways to define a server action:
+- Adding "use server"; at the top of the file indicates that every function inside the module is a server action.
+- Alternatively, adding "use server"; inside the definition of a function indicates that the function is a server action.
+
 ## Got ya's with Server Actions
 
 - When fetching data from server actions the request method to fetch is a POST, which means we can't cache the request
