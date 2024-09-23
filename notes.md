@@ -22,6 +22,22 @@
       - blog/
         - [slug].tsx # Route: /blog/:slug
 
+## Routes example (checkout the dir. nextjs-route-test) this is using App Router
+
+| Path                               | URL Examples                                 |
+|------------------------------------|----------------------------------------------|
+| `/page.tsx`                        | `/`                                          |
+| `/about/page.tsx`                  | `/about`                                     |
+| `/about/you/page.tsx`              | `/about/you`                                 |
+| `/product/[productId]/page.tsx`    | `/product/foo`, `/product/bar`               |
+| `/product/page.tsx`                | `/product`                                   |
+| `/setting/[...setting]/page.tsx`   | `/setting/a`, `/setting/b/c`                 |
+| `/setting/page.tsx`                | `/setting`                                   |
+| `/info/[[...item]]/page.tsx`       | `/info`, `/info/23`, `/info/23/detail`       |
+| `/(teamA)/editor/page.tsx`         | `/editor`                                    |
+
+- Heads up you can use `route.ts` file instead of `page.tsx` file if you want to create a route handler
+
 ## @ Symbol
 
 - The @ symbol is used to import modules from the root of the project, instead of using relative paths (../../..)
