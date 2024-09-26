@@ -1,18 +1,15 @@
-[submodule "nextjs-starter"]
-	path = nextjs-starter
-	url = git@github.com:hd719/nexjs-starter.git
-[submodule "code-snippets"]
-	path = code-snippets
-	url = git@github.com:hd719/code-snippets.git
-[submodule "discuss"]
-	path = discuss
-	url = git@github.com:hd719/discuss.git
-[submodule "nextjs-auth"]
-	path = nextjs-auth
-	url = https://github.com/hd719/nextjs-auth
-[submodule "nextjs-chatgpt-app"]
-	path = nextjs-chatgpt-app
-	url = https://github.com/hd719/nextjs-chatgpt-app
-[submodule "nextjs-css-modules"]
-	path = nextjs-css-modules
-	url = git@github.com:hd719/nextjs-css-modules.git
+[submodule "sg-discuss"]
+	path = sg-discuss
+	url = git@github.com:hd719/sg-discuss.git
+[submodule "sg-code-snippets"]
+	path = sg-code-snippets
+	url = git@github.com:hd719/sg-code-snippets.git
+[submodule "sg-nexjs-starter"]
+	path = sg-nexjs-starter
+	url = git@github.com:hd719/sg-nexjs-starter.git
+[submodule "jh-nextjs-css-modules"]
+	path = jh-nextjs-css-modules
+	url = git@github.com:hd719/jh-nextjs-css-modules.git
+[submodule "jh-nextjs-chatgpt-app"]
+	path = jh-nextjs-chatgpt-app
+	url = git@github.com:hd719/jh-nextjs-chatgpt-app.git
