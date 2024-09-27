@@ -373,3 +373,9 @@ export { default } from './Button'
 `npx storybook@latest init`
 
 Initializing Storybook for Next.js
+
+### Unit Testing
+
+- Keep the test next to the component
+
+### End-to-End Testing
