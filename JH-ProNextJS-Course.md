@@ -325,3 +325,36 @@ export default async function ClientComponent({content: () => Promise<React.Reac
   ]
 }
 ```
+
+### Project Structure
+
+#### Importing Component Files
+
+Ex.
+
+```jsx
+// inside page.tsx
+import { Button } from './Button/Button';
+```
+
+- The import can be simplified by creating a `index.tsx` file and export the component from there
+
+```jsx
+export { Button } from './Button';
+```
+
+#### Default Export
+
+```jsx
+export default function Button() { ... }
+```
+
+```jsx
+index.ts
+
+export { default } from './Button'
+```
+
+- Organizing components into directories like this helps make the project structure easier to understand
+- The directory is also easier to share and reuse across the application or in other projects
+- While it might seem like a lot for smaller components, using this structure from the beginning sets a good foundation and encourages good organization
