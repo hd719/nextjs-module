@@ -379,3 +379,11 @@ Initializing Storybook for Next.js
 - Keep the test next to the component
 
 ### End-to-End Testing
+
+### Bundle Size checker
+
+- Keeping bundle size under control is important for maintaining optimal performance
+- To help with this, we'll use GitHub Actions to automate bundle size checks on pull requests and pushes to the main branch
+- Additionally, we'll use Husky to run these same checks locally before committing code
+
+### MonoRepo
