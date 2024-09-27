@@ -368,3 +368,8 @@ export { default } from './Button'
 
 - Rule of thumb is one exported component per file, with files ideally less than 100 lines and not bigger than around 250 lines
 
+### Storybook with NextJS
+
+`npx storybook@latest init`
+
+Initializing Storybook for Next.js
