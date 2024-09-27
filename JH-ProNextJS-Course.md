@@ -387,3 +387,44 @@ Initializing Storybook for Next.js
 - Additionally, we'll use Husky to run these same checks locally before committing code
 
 ### MonoRepo
+
+#### Advanced Component Structure - 16-lego-components
+
+- Introduced in Next.js v14
+- These components are complete and self-contained just like real Lego blocks and can manage their own state, fetch data, and render themselves
+- We'll convert the PokemonList component into a Lego component that can be shared between multiple applications in a Turborepo app
+- Only available in the App Router
+
+#### Naming and Organizing Server and Client Components - 15-client-server-components
+
+- This illustrates an emerging pattern: a symbiotic relationship between server and client components
+- The server component manages data fetching and server-side operations, while the client component handles interactivity and presentation
+- One way developers denote this relationship is by appending .server and .client to the filenames
+
+ex.
+```
+  PokemonList/
+    PokemonList.server.tsx
+    PokemonList.client.tsx
+```
+
+- OR create an index.ts file that exports the server component by default:
+
+```jsx
+// inside PokemonList/index.ts
+export { default } from "./PokemonList.server";
+```
+
+```jsx
+// inside app/page.tsx
+
+import PokemonList from "./PokemonList";
+
+export default function Home() {
+  return <PokemonList />;
+}
+```
+
+- This directory-based approach hides the server-client component relationship, presenting a single PokemonList component to the user
+- It streamlines the code and prevents confusion about entry points
+
