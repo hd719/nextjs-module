@@ -358,3 +358,13 @@ export { default } from './Button'
 - Organizing components into directories like this helps make the project structure easier to understand
 - The directory is also easier to share and reuse across the application or in other projects
 - While it might seem like a lot for smaller components, using this structure from the beginning sets a good foundation and encourages good organization
+
+#### Organizing Components into Directories
+
+- Components are in upper case
+- **KEEP COMPONENTS CLOSEST TO WHERE THEY ARE USED**
+
+#### Organizing Component Files - checkout this dir. 03-one-component-per-file
+
+- Rule of thumb is one exported component per file, with files ideally less than 100 lines and not bigger than around 250 lines
+
