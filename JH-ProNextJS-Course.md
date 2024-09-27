@@ -299,3 +299,29 @@ export default async function ClientComponent({content: () => Promise<React.Reac
 - [Repo](https://github.com/ProNextJS/project-infrastructure)
 - [Forked Repo](https://github.com/hd719/jh-nextjs-project-infrastructure)
 - [Infrastructure Template](https://github.com/ProNextJS/project-infrastructure/blob/main/INFRASTRUCTURE.md)
+
+### Code Quality from the start
+
+#### Setting up Esling and Prettier
+
+- Next.js projects come with ESLint set up, using the `next/core-web-vitals config`
+- Default command `pnpm run lint`
+- Prettier install `pnpm add eslint-config-prettier prettier prettier-plugin-tailwindcss -D`
+  - eslint-config-prettier: This package makes ESLint and Prettier work together without conflicts.
+  - prettier: The main Prettier package for code formatting.
+  - prettier-plugin-tailwindcss: This plugin formats Tailwind CSS classes in your code
+
+- Sort import Plugin `pnpm add @ianvs/prettier-plugin-sort-imports -D`
+
+```json
+{
+  "plugins": ["prettier-plugin-tailwindcss", "@ianvs/sort-imports"],
+  "importOrder": [
+    "^(react/(.*)$)|^(react$)",
+    "",
+    "<THIRD_PARTY_MODULES>",
+    "",
+    "^[./]"
+  ]
+}
+```
