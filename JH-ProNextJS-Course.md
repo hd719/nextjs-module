@@ -293,3 +293,9 @@ export default async function ClientComponent({content: () => Promise<React.Reac
 - Commands:
   - `npx shadcn-ui@latest init` - to install the library
   - `npx shadcn-ui@latest add button input form` - to add components
+
+## Next.js Production Project Setup and Infrastructure
+
+- [Repo](https://github.com/ProNextJS/project-infrastructure)
+- [Forked Repo](https://github.com/hd719/jh-nextjs-project-infrastructure)
+- [Infrastructure Template](https://github.com/ProNextJS/project-infrastructure/blob/main/INFRASTRUCTURE.md)
