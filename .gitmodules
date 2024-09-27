@@ -13,3 +13,6 @@
 [submodule "jh-nextjs-chatgpt-app"]
 	path = jh-nextjs-chatgpt-app
 	url = git@github.com:hd719/jh-nextjs-chatgpt-app.git
+[submodule "jh-nextjs-project-infrastructure"]
+	path = jh-nextjs-project-infrastructure
+	url = https://github.com/hd719/jh-nextjs-project-infrastructure
