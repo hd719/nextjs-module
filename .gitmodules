@@ -16,3 +16,6 @@
 [submodule "jh-nextjs-project-infrastructure"]
 	path = jh-nextjs-project-infrastructure
 	url = https://github.com/hd719/jh-nextjs-project-infrastructure
+[submodule "jh-nextjs-client-and-server-cache"]
+	path = jh-nextjs-client-and-server-cache
+	url = https://github.com/hd719/jh-nextjs-client-and-server-cache

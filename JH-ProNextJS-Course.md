@@ -388,21 +388,22 @@ Initializing Storybook for Next.js
 
 ### MonoRepo
 
-#### Advanced Component Structure - 16-lego-components
+### Advanced Component Structure - 16-lego-components
 
 - Introduced in Next.js v14
 - These components are complete and self-contained just like real Lego blocks and can manage their own state, fetch data, and render themselves
 - We'll convert the PokemonList component into a Lego component that can be shared between multiple applications in a Turborepo app
 - Only available in the App Router
 
-#### Naming and Organizing Server and Client Components - 15-client-server-components
+### Naming and Organizing Server and Client Components - 15-client-server-components
 
 - This illustrates an emerging pattern: a symbiotic relationship between server and client components
 - The server component manages data fetching and server-side operations, while the client component handles interactivity and presentation
 - One way developers denote this relationship is by appending .server and .client to the filenames
 
 ex.
-```
+
+```md
   PokemonList/
     PokemonList.server.tsx
     PokemonList.client.tsx
@@ -428,3 +429,410 @@ export default function Home() {
 - This directory-based approach hides the server-client component relationship, presenting a single PokemonList component to the user
 - It streamlines the code and prevents confusion about entry points
 
+## Next.js React Server Component Architecture
+
+### Caching in Depth
+
+#### Caching with Next.js App Router
+
+- Multiple levels of caching
+
+### 1. Full Route Cache
+
+#### The Full Route Cache Guide
+
+- Caches the full route
+- There are 2 types of routes
+  - Static Routes:
+    - Doesn't involve elements that would necessitate re-rendering on the server for each request
+    - Build process generates static HTML for these routes, resulting in the same content served on each request
+    - Great for performance
+  - Dynamic Routes:
+    - Require server-side rendering for each request
+
+- Inspecting the route table generated after building a Next.js application can tell you if a route is static
+- Notice the "O" next to the / route. This "O" signifies a statically generated route
+- Static routes are optimal for performance, but there are times when you might want to force a route to render dynamically
+
+- Mark routes as dynamic by:
+  - `unstable_noStore();`
+
+```jsx
+import { unstable_noStore } from "next/cache";
+import { revalidatePath } from "next/cache";
+
+import RevalidateHomeButton from "./RevalidateHomeButton";
+
+export default function Home() {
+  unstable_noStore();
+
+  async function onRevalidateHome() {
+    "use server";
+    revalidatePath("/");
+  }
+
+  console.log(`Rendering / ${new Date().toLocaleTimeString()}`);
+  return (
+    <main>
+      <div>{new Date().toLocaleTimeString()}</div>
+      <RevalidateHomeButton onRevalidateHome={onRevalidateHome} />
+    </main>
+  );
+}
+```
+
+##### Dynamic Routes in Next.js (Full Route)
+
+- Actions within the component that suggest dynamic behavior can also achieve this (accessing properties of the incoming request can signal to Next.js that the component needs dynamic rendering)
+- Example accessing properties of the incoming request
+- Or we can tell nextjs that we are using a dynamic route by using `export const dynamic = "force-dyanmic";` force-dynamic option makes the route dynamic and this would make the entire page dynamic
+
+```jsx
+import RevalidateHomeButton from "./RevalidateHomeButton";
+
+import { cookies, headers } from "next/headers";
+import { useSearchParams } from "next/navigation";
+
+export const dynamic = "force-dynamic";
+// export const dynamic = "auto";
+// export const dynamic = "error";
+// export const dynamic = "force-static";
+
+export default function Home() {
+  headers();
+  cookies();
+  useSearchParams();
+
+  async function onRevalidateHome() {
+    "use server";
+    revalidatePath("/");
+  }
+
+  console.log(`Rendering / ${new Date().toLocaleTimeString()}`);
+  return (
+    <main>
+      <div>{new Date().toLocaleTimeString()}</div>
+      <RevalidateHomeButton onRevalidateHome={onRevalidateHome} />
+    </main>
+  );
+}
+```
+
+##### Automatic and Manual Revalidation (Full Route Cache)
+
+- For example updating every 5 seconds and invalidate the cache or when user clicks a button
+
+```jsx
+import { revalidatePath } from "next/cache";
+
+import RevalidateHomeButton from "./RevalidateHomeButton";
+
+export const revalidate = 5;
+
+export default function Home() {
+  // server action
+  async function onRevalidateHome() {
+    "use server";
+    revalidatePath("/"); // revalidate the home page
+  }
+
+  console.log(`Rendering / ${new Date().toLocaleTimeString()}`);
+  return (
+    <main>
+      <div>{new Date().toLocaleTimeString()}</div>
+      <RevalidateHomeButton onRevalidateHome={onRevalidateHome} />
+    </main>
+  );
+}
+```
+
+##### Next.js API Route Caching (Full Route Cache)
+
+Ex.
+
+```jsx
+import { unstable_noStore } from "next/cache";
+import { cookies, headers } from "next/headers";
+import { NextResponse } from "next/server";
+
+// export const dynamic = "force-dynamic";
+// export const revalidate = 2;
+
+export async function GET() {
+  // unstable_noStore();
+  // headers();
+  // cookies();
+
+  console.log(`GET /time ${new Date().toLocaleTimeString()}`);
+  return NextResponse.json({ time: new Date().toLocaleTimeString() });
+}
+
+export async function POST() {
+  console.log(`POST /time ${new Date().toLocaleTimeString()}`);
+  return NextResponse.json({ time: new Date().toLocaleTimeString() });
+}
+```
+
+- Automatically caches API routes that don't perform actions that would prevent caching, such as data fetching or mutations
+- **One important thing to remember is that exporting a POST, PUT, or DELETE handler from your API route file automatically makes the route dynamic**
+- Even with revalidate set, the presence of the POST handler will force the route to be dynamic. This ensures that any mutations or data updates performed by these HTTP methods are reflected correctly
+
+#### 2. Data Cache
+
+##### Data Caching and Revalidation with React Server Components
+
+- Statically caches the response by default
+- Using `cache: "no-store"` will prevent caching
+- Provides a revalidate option that allows us to specify how often a statically generated page should be regenerated
+
+```jsx
+export default async function APITime() {
+  const timeReq = await fetch("http://localhost:8080/time", {
+    next: {
+      revalidate: 2
+    },
+  });
+}
+```
+
+`On-Demand Revalidation with Server Actions With Tags ex.`
+
+```jsx
+import { revalidateTag } from "next/cache";
+
+import RevalidateAPITimeButton from "./RevalidateAPITimeButton";
+
+export default async function APITime() {
+  const timeReq = await fetch("http://localhost:8080/time", {
+    next: {
+      tags: ["api-time"],
+    },
+  });
+  const { time } = await timeReq.json();
+
+  async function onRevalidate() {
+    "use server";,
+    revalidateTag("api-time");
+  }
+
+  console.log(`Render /api-time ${new Date().toLocaleTimeString()}`);
+
+  return (
+    <div>
+      <h1 className="text-2xl">Time From API</h1>
+      <p className="text-xl">{time}</p>
+      <RevalidateAPITimeButton onRevalidate={onRevalidate} />
+    </div>
+  );
+}
+```
+
+```jsx
+"use client";
+import { Button } from "@/components/ui/button";
+
+export default function RevalidateAPITimeButton({
+  onRevalidate,
+}: {
+  onRevalidate: () => Promise<void>;
+}) {
+  return (
+    <Button onClick={async () => await onRevalidate()} className="mt-4">
+      Revalidate API Time
+    </Button>
+  );
+}
+```
+
+- The tagging mechanism offers a flexible way to manage data invalidation across our application, especially when working with databases and filesystems
+
+#### Cache-busting with Tags
+
+- `unstable_cache` which is a persistent cache that goes between requests
+
+```jsx
+// inside app/db-time/db-time.ts
+
+import { unstable_cache } from "next/cache";
+
+export async function getDBTimeReal() {
+  return { time: new Date().toLocaleTimeString() };
+}
+export const getDBTime = unstable_cache(getDBTimeReal, ["db-time"], {
+  tags: ["db-time"],
+});
+```
+
+```jsx
+// inside app/db-time/RerenderDBTimeButton.tsx
+"use client";
+import { Button } from "@/components/ui/button";
+
+export default function RevalidateDBTimeButton({
+  onRevalidate,
+}: {
+  onRevalidate: () => Promise<void>;
+}) {
+  return (
+    <Button onClick={async () => await onRevalidate()} className="mt-4">
+      Revalidate DB Time
+    </Button>
+  );
+}
+```
+
+```jsx
+import { revalidateTag } from "next/cache";
+import { getDBTime } from "./db-time";
+import RevalidateDBTimeButton from "./RevalidateDBTimeButton";
+
+export const dynamic = "force-dynamic";
+
+export default async function DBTime() {
+  const { time } = await getDBTimeReal();
+
+  console.log(`Render /db-time ${new Date().toLocaleTimeString()}`);
+
+  async function onRevalidate() {
+    "use server";
+    revalidateTag("db-time");
+  }
+
+  return (
+    <div>
+      <h1 className="text-2xl">Time From DB</h1>
+      <p className="text-xl">{time}</p>
+      <RevalidateDBTimeButton onRevalidate={onRevalidate} />
+    </div>
+  );
+}
+```
+
+- Clicking this button will trigger the server action, which invalidates the 'db-time' tag, causing Next.js to re-fetch data on the next request.
+- Using revalidatePath is also an option, but using tags allows for more granular control over which cache to invalidate.
+
+#### The Next.js Router Cache (Client Cache)
+
+- Built-in client side cache
+- Designed to make navigation between routes super efficient
+- **When you visit a route in your Next.js app, the page content gets stored in the cache. If you revisit that same route later, the cached version will load instantly, resulting in a much smoother user experience**
+
+#### Revalidation with Server Actions by using `revalidatePath` and going back to the home page
+
+```jsx
+// inside app/revalidate-home.tsx
+"use server";
+import { revalidatePath } from "next/cache";
+
+export async function revalidateHome() {
+  revalidatePath("/");
+}
+```
+
+```jsx
+// inside app/sub-route/page.tsx
+"use client";
+import { useRouter } from "next/navigation";
+
+import { Button } from "@/components/ui/button";
+
+import { revalidateHome } from "../revalidate-home";
+
+export default function SubRoute() {
+  const router = useRouter();
+
+  return (
+    <main className="flex flex-col gap-3">
+      <div>
+         <Button
+          onClick={async () => {
+            await revalidateHome();
+            router.push('/');
+          }}
+        >
+          Go Home
+        </Button>
+      </div>
+    </main>
+  );
+}
+```
+
+```jsx
+import Link from "next/link";
+import Timer from "./Timer";
+
+export default function Home() {
+  return (
+    <main>
+      <div>Time: {new Date().toLocaleTimeString()}</div>
+      <div>
+        <Link href="/sub-route">Sub-Route</Link>
+      </div>
+      <Timer />
+    </main>
+  );
+}
+```
+
+#### Role of Response Headers in Revalidation (how does it work)
+
+1. When a server action is executed the Next.js client sends a request to the server with a special next-action-id header
+2. The server recognizes this header and executes the corresponding server action
+3. If this action includes `revalidatePath` or `revalidateTag`, the server's response will include a x-nextjs-revalidate header
+4. This header tells the Next.js client to invalidate its cache for the specified route or tags, which will trigger a revalidation on the next navigation
+
+#### Revalidation without Server Actions
+
+- What happens if we want to revalidate a route without **directly calling a server action**?
+  - Cant use `revalidatePath` or `revalidateTag` bc it can only be used in server actions
+- For example, let's say we have an API route that modifies data used on the homepage.
+
+```jsx
+// app/api/revalidateHome/route.ts
+import { revalidatePath } from "next/cache";
+import { NextResponse } from "next/server";
+
+export function POST() {
+  revalidatePath("/");
+  return NextResponse.json({ message: "Home invalidated" });
+}
+```
+
+```jsx
+// inside app/sub-route/page.tsx
+"use client";
+import { useRouter } from "next/navigation";
+
+import { Button } from "@/components/ui/button";
+
+import { revalidateHome } from "../revalidate-home";
+
+export default function SubRoute() {
+  const router = useRouter();
+
+  return (
+    <main className="flex flex-col gap-3">
+      <div>
+        <Button
+          onClick={async () => {
+            await fetch("/api/revalidateHome", { method: "POST" });
+            router.push("/");
+            router.refresh();
+          }}
+        >
+          Go Home
+        </Button>
+      </div>
+    </main>
+  );
+}
+```
+
+- We can then post to the API route from the sub-route component instead of calling the server action
+- We can also use router.refresh() to update the current page content on demand, without navigating to a different route
+
+#### When to worry about Router Cache?
+
+- The good news is that the router cache usually works seamlessly in the background
+- You'll typically only need to manually interact with it when working with **API routes that modify data used on your pages or when you need fine-grained control over cache invalidation**
