@@ -836,3 +836,267 @@ export default function SubRoute() {
 
 - The good news is that the router cache usually works seamlessly in the background
 - You'll typically only need to manually interact with it when working with **API routes that modify data used on your pages or when you need fine-grained control over cache invalidation**
+
+### Application Architecture with Options
+
+---
+
+- We'll be using a simple to-do list application as a running example throughout this section
+- App includes authorization, data fetching strategies, in our case priorities are fetched publicly without auth however todos are fetched with auth
+- This repo is more of a tool kit to adapt to your own project
+- Primary authorization will be JWT within HTTP-only cookies and some services will incorporate service tokens
+
+### Local Architecture
+
+---
+
+#### The API Variant of Local Systems ex. `nextjs-module/jh-nextjs-client-and-server-cache/03-systems-architecture/local-api`
+
+- The to-do data is stored in an in-memory database, and we'll use Next.js API routes to handle client requests
+- This variation of the local systems architecture where our Next.js application communicates with a local API route instead of relying on server actions
+- This approach is particularly useful when you have multiple clients, such as web browser, mobile app, desktop app that need access to the same API
+
+##### When to use this architecture?
+
+- By separating the client-side logic from the API endpoints, this approach provides flexibility and scalability (especially when you have multiple client applications)
+- While server actions excel in scenarios with a single client (the web browser), the API route approach shines when you need to share your API with other clients or platforms
+
+#### Building with local server actions in Next.js ex. `nextjs-module/jh-nextjs-client-and-server-cache/03-systems-architecture/apps/local-sa`
+
+**NOTE: This is the recommended way of doing things**
+
+- The server action variant of the local architecture is perfect for small teams, startups, or internal admin tools where simplicity and efficiency are key
+
+- The architecture is simple– here's the flow:
+  1. Data Fetching (RSC): The app uses a React Server Component (RSC) on the homepage to fetch to-dos from the todos library.
+  2. Client-Side Rendering: The RSC passes the fetched data to the client-side component for rendering.
+  3. Server Actions: The client utilizes server actions for any updates (adding, marking complete, deleting) to the to-dos.
+  4. Revalidation: After a server action completes, we revalidate the / route, triggering a refresh and reflecting the changes in the UI.
+
+- **RECOMMENDED WAY: In this architecture there are no API routes, the server actions handle all the data fetching and updating (new way of doing it - the old way was to use API routes)**
+- This server action-based local architecture excels for its simplicity
+- It's easy to understand, has minimal boilerplate, and is performant way to build applications at this scale
+
+### Backend for Frontend (BFF) Architecture
+
+---
+
+#### BFF Architecture with Graphql
+
+- **NOTE: DO NOT USE THE CURRENT AUTH PACKAGE IN PRODUCTION**
+- Take a look at [Next-Auth Email Provider](https://next-auth.js.org/providers/credentials) and [NextJS Auth](https://nextjs.org/docs/pages/building-your-application/authentication)
+
+- Build a Backend for Frontend (BFF) using GraphQL within a Next.js application
+- Useful when you have graphql microservice architecture, but prefer to avoid exposing Graphql directly to the client
+- Setup involves a BFF GraphQL Next.js App Router application, and the GraphQL backend
+- Client interacts with the BFF via REST which then uses GraphQL to interact with the `api-gql` service
+- This separation offers a layer of security, mitigating vulnerabilities associated with exposing GraphQL endpoints publicly
+- The API routes handle communication between the client-side component and the API GraphQL backend
+- Useful if you have Graphql backend
+
+#### Backend for Frontend (BFF) Architecture with Server Actions `RECOMMENDED`
+
+- Simplest way to build a BFF is to use server actions
+- Our Next.js application acts as a client-facing frontend and a backend-for-frontend (BFF), communicating with a REST microservice using server actions
+- Use server actions to talk between the client and the Next.js App Router application inside of the bff-sa directory.
+- Our application architecture involves three main components:s
+  1. Next.js App (BFF): This acts as a client-facing frontend and a backend-for-frontend (BFF). It handles user interactions, server-side rendering, and communication with the microservice.
+  2. Server Actions: These functions, running on the server-side within our Next.js application, provide a secure way to interact with the microservice.
+  3. REST Microservice: This independent service handles the application's core logic and data persistence.
+
+- **NOTE:** We pass cookies from the incoming request to the REST API for authentication. This ensures that the REST API knows who is making the request.
+- **NOTE:** Priorities are unauthenticated, while to-dos are authenticated and require a user ID
+
+##### Benefits of this Architecture
+
+- By using server actions and a REST microservice, the Next.js application doesn't need to directly manage data. Instead, it can rely on the microservice as the source of truth
+- Server actions provide a secure channel for communication, protecting sensitive data and operations
+
+#### Backend for Frontend (BFF) Architecture with API Variant
+
+- Where the client uses a REST API located on the BFF API app to make mutations to their to-do list
+- The BFF API app, in turn, makes requests to the API REST microservice, which interacts with the To-Do's database
+- The trick here is in the authorization
+- We take the cookie from the incoming request to the Next.js server and proxy it through to the API server
+- This allows the API REST server to know who it's talking to
+- It can use the same JWT decoding algorithm that's used by NextAuth to get the user ID out of the JWT
+- This BFF pattern is especially beneficial if you have other clients besides your web app, like mobile apps, desktop apps, or CLIs, that need to interact with your API
+- This pattern provides a dedicated layer for each client type
+
+#### BFF Pattern with gRPC (TwirpScript)
+
+- The client is talking to the Next.js server through either server actions or REST, but the Next.js server is in turn talking to its microservice backend through gRPC
+- TwirpScript provides a more developer-friendly way to work with gRPC, while having essentially the same architecture
+- There are two different gRPC services, one for priorities and one for ToDos
+- Both services are reside on the api-twirp server
+- The associated functions are in the repo/twirp-protos package, which is shared between the Next.js application and the API for Twirp
+- This is one of the cleanest approaches to building a BFF with a gRPC architecture, and is highly recommended if you're planning to use gRPC in your future projects
+
+#### BFF Pattern with tRPC
+
+- tRPC provides a way to handle communication between servers or between a client and a Next.js server
+- Our setup will use a Next.js server for the BFF, which will communicate with a REST microservice
+- The Next.js server will use tRPC to communicate with the frontend, while using REST to talk to the microservice
+- tRPC leverages Zod for type safety
+- Zod allows us to define schemas for our data using its straightforward syntax
+- For instance, the TodoSchema defines the structure of a to-do item
+- We use Zod to validate both the data coming in from requests and the data being sent back in responses
+
+### External Architectures
+
+---
+
+#### Server Architecture with External API Domain
+
+- Imagine your Next.js server, hosted on mycompany.com, needs to interact with an external REST API
+- Here's the interesting part, if the API changes, it triggers a webhook to tell the Next.js server to update its cache - his ensures we always have the latest data
+- After the Next.js server fetches data, it passes it to a client-side component
+- When the client component needs to modify data, it talks directly to the API using api.mycompany.com. Again, a webhook notifies the Next.js server to revalidate the cache
+- Think of it this way: the server fetches the initial data, and the client handles updates, both talking to the same API.
+- When the API makes a mutation, it sends a POST request to this route with the event type and relevant data. The route then revalidates the cache for the specific page associated with the updated data
+- Inside the REST API endpoint at apps/api-rest/src/server.ts we see that when a mutation occurs, a webhook is sent to the Next.js server. This webhook includes the event type and relevant data. The server then checks if a front-end server is defined in the environment variables, and if so, sends a POST request to the webhook route
+
+#### Proxying External Systems with Next.js
+
+- This approach uses an external proxy for client-side requests, keeping our application code blissfully unaware of the proxying
+- Code for this example can be found in the external-proxied dir
+- This configuration handles routing requests made to /rest to our external REST API, running locally on port 5001
+- This configuration makes it so the application code has no idea that requests are being made, so there isn't an opportunity to look at the request
+
+```js
+// inside apps/external-proxied/next.config.js
+
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  transpilePackages: ["@repo/ui"],
+  rewrites: async () => {
+    return [
+      {
+        source: "/rest/:path*",
+        destination: "http://localhost:5001/:path*",
+      },
+    ];
+  },
+};
+
+export default nextConfig;
+```
+
+##### Handling Mutations
+
+- When a mutation occurs in our REST API, we need to update our application state. We achieve this through a webhook that triggers revalidation on specific paths
+- A POST request to api/callback triggers revalidation for the homepage
+
+- Inside the API REST server implementation in the api-rest directory, we have a postWebhook function that sends a POST request to the Next.js webhook endpoint
+
+```js
+function postWebhook(event: string, payload: any) {
+  console.log("Posting webhook", process.env.FRONTEND_SERVER, event, payload);
+  if (process.env.FRONTEND_SERVER) {
+    fetch(`${process.env.FRONTEND_SERVER}/api/callback`, { // to our nextjs application
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        event,
+        payload,
+      }),
+    });
+  }
+}
+
+export const createServer = (): Express => {
+  const app = express();
+  app
+    .disable("x-powered-by")
+    .use(cors({ origin: true, credentials: true }))
+    .use(cookieParser())
+    .use(urlencoded({ extended: true }))
+    .use(json())
+    .get("/priorities", (_, res) => {
+      return res.json(PRIORITIES);
+    })
+    .get("/todos", async (req, res) => {
+      const info = await decodeJWT<{ sub: string }>(
+        req.cookies["authjs.session-token"]
+      );
+      if (!info) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      const { sub } = info;
+      const todos = getTodos(sub);
+      return res.json(todos);
+    })
+    .get("/todo/:id", async (req, res) => {
+      const info = await decodeJWT<{ sub: string }>(
+        req.cookies["authjs.session-token"]
+      );
+      if (!info) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      const { sub } = info;
+      const { id } = req.params;
+      const todos = getTodoById(sub, id);
+      return res.json(todos);
+    })
+    .post("/todo", async (req, res) => {
+      const info = await decodeJWT<{ sub: string }>(
+        req.cookies["authjs.session-token"]
+      );
+      if (!info) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      const { sub } = info;
+      const todo = req.body;
+      todo.id = `${sub}-${Date.now()}`;
+      const newTodo = addTodo(sub, todo);
+
+      postWebhook("todo-added", newTodo);
+
+      return res.json(newTodo);
+    })
+    .put("/todo/:id", async (req, res) => {
+      const info = await decodeJWT<{ sub: string }>(
+        req.cookies["authjs.session-token"]
+      );
+      if (!info) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      const { sub } = info;
+      const { id } = req.params;
+      updateTodoCompletion(sub, id, req.body.completed);
+
+      const newTodo = getTodoById(sub, id);
+
+      postWebhook("todo-changed", {
+        id,
+        completed: req.body.completed,
+      });
+
+      return res.json(newTodo);
+    })
+
+  return app;
+};
+```
+
+- When the API REST server makes a mutation, it calls back to the API callback
+- Then the API callback unconditionally revalidates the path, including all event details
+
+##### Advantages and Limitations
+
+- This approach provides client components with simple access to the backend, but it means that you do not get the BFF ability to actually look at what the requests are
+
+#### Token Variation of the External Systems Architecture
+
+- This approach uses a service token to handle authentication between a Next.js client and an external API
+- We'll set up a proxy in Next.js and use a bearer token strategy to make authenticated requests.
+
+##### Security Considerations
+
+- It is important to note that this architecture method exposes the access token to the client-side JavaScript
+- This is in contrast to other examples we've looked at that use HTTP-only cookies that are not accessible to the client
+- A more secure approach would be to handle token-based communication entirely on the server side
+- In this setup, the client would talk to the Next.js server, then the Next.js server would have access to the Bearer token on the server
+- It would make the request, then send the data back to the client
