@@ -20,6 +20,158 @@ Checkout the dir. nextjs-route-test - this is using App Router
 
 - Heads up you can use `route.ts` file instead of `page.tsx` file if you want to create a route handler
 
+### Data Fetching
+
+1. Server-side data fetching
+
+```jsx
+export default async function Page() {
+  let data = await fetch('https://api.vercel.app/blog')
+  let posts = await data.json()
+  return (
+    <ul>
+      {posts.map((post) => (
+        <li key={post.id}>{post.title}</li>
+      ))}
+    </ul>
+  )
+}
+```
+
+2. Client-side data fetching
+
+```jsx
+'use client' // This is way is not recommended (use a library like SWR or TanStack Query - you dont caching, loading, error, states, and revalidation)
+
+import { useState, useEffect } from 'react'
+
+export function Posts() {
+  const [posts, setPosts] = useState(null)
+
+  useEffect(() => {
+    async function fetchPosts() {
+      let res = await fetch('https://api.vercel.app/blog')
+      let data = await res.json()
+      setPosts(data)
+    }
+    fetchPosts()
+  }, [])
+
+  if (!posts) return <div>Loading...</div>
+
+  return (
+    <ul>
+      {posts.map((post) => (
+        <li key={post.id}>{post.title}</li>
+      ))}
+    </ul>
+  )
+}
+```
+
+3. Client-side data fetching with API Route Handlers
+
+```jsx
+// src/app/api/route.ts
+import { NextRequest, NextResponse } from "next/server";
+
+export async function GET(request: NextRequest) {
+  const requestUrl = request.url;
+
+  return NextResponse.json({
+    message: "Hello from the API",
+    request: requestUrl,
+  });
+}
+
+export async function HEAD(request: NextRequest) {}
+
+// Pass in the API KEY HERE -> API key is hidden on the client
+const API_KEY = process.env.MY_API_KEY;
+export async function POST(request) {
+  const authHeader = request.headers.get('Authorization');
+
+  // Check if API key is present and correct
+  if (!authHeader || authHeader !== `Bearer ${API_KEY}`) {
+    return NextResponse.json(
+      { message: 'Unauthorized: Invalid API Key' },
+      { status: 401 }
+    );
+  }
+
+  const data = await request.json();
+  items.push(data);
+  return NextResponse.json({ message: 'Item added successfully', items });
+}
+
+export async function PUT(request: NextRequest) {}
+
+export async function DELETE(request: NextRequest) {}
+
+export async function PATCH(request: NextRequest) {}
+
+// If `OPTIONS` is not defined, Next.js will automatically implement `OPTIONS` and  set the appropriate Response `Allow` header depending on the other methods defined in the route handler.
+export async function OPTIONS(request: NextRequest) {}
+```
+
+```jsx
+// ClientComponent
+
+"use client";
+import { useEffect, useState } from 'react';
+
+export default function ItemsComponent() {
+  const [items, setItems] = useState([]);
+  const [newItem, setNewItem] = useState('');
+
+  // Fetch items on component mount
+  useEffect(() => {
+    async function fetchItems() {
+      const response = await fetch('/api/items');
+      const data = await response.json();
+      setItems(data.items);
+    }
+    fetchItems();
+  }, []);
+
+  // Add a new item
+  const addItem = async () => {
+    if (!newItem) return;
+
+    const response = await fetch('/api/items', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ name: newItem }),
+    });
+
+    const data = await response.json();
+    setItems(data.items);
+    setNewItem(''); // Clear the input field
+  };
+
+  return (
+    <div>
+      <h2>Items List</h2>
+      <ul>
+        {items.map((item, index) => (
+          <li key={index}>{item.name}</li>
+        ))}
+      </ul>
+
+      <input
+        type="text"
+        value={newItem}
+        onChange={(e) => setNewItem(e.target.value)}
+        placeholder="Add a new item"
+      />
+      <button onClick={addItem}>Add Item</button>
+    </div>
+  );
+}
+```
+
 ### Server Actions
 
 - There are two different ways to define a server action:
@@ -1328,4 +1480,3 @@ async function getTimer() {
 3. Normally, CDNs don't cache any POST, PUT, PATCH, or DELETE requests, so there would be special configuration needed to make this work in a real-world scenario.
 
 ##### File Uploads in NextJS App Router Apps dir. jh-nextjs-client-and-server-cache/02-file-uploads
-
