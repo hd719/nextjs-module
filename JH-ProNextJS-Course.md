@@ -210,9 +210,7 @@ export default async function ClientComponent({content: () => Promise<React.Reac
 - Parallel Routes in Next.js App Router provide a powerful way to load multiple components simultaneously, improving the performance and user experience of your application.
 - By using Parallel Routes, we were able to add a chat menu sidebar that loads in parallel with the main chat content, without blocking the entire page.
 
-## Styling NextJS Application with CSS
-
-**EACH THEM HAS ITS DOWN DEDICATED BRANCH**
+## Styling NextJS Application with CSS (each style has its own branch)
 
 ### Styling Challenges with React Server Components
 
@@ -350,7 +348,7 @@ export default function Button() { ... }
 ```
 
 ```jsx
-index.ts
+// index.ts
 
 export { default } from './Button'
 ```
@@ -437,9 +435,9 @@ export default function Home() {
 
 - Multiple levels of caching
 
-### 1. Full Route Cache
+#### 1. Full Route Cache
 
-#### The Full Route Cache Guide
+##### The Full Route Cache Guide
 
 - Caches the full route
 - There are 2 types of routes
@@ -863,7 +861,7 @@ export default function SubRoute() {
 
 #### Building with local server actions in Next.js ex. `nextjs-module/jh-nextjs-client-and-server-cache/03-systems-architecture/apps/local-sa`
 
-**NOTE: This is the recommended way of doing things**
+#### **NOTE: This is the recommended way of doing things**
 
 - The server action variant of the local architecture is perfect for small teams, startups, or internal admin tools where simplicity and efficiency are key
 
@@ -1100,3 +1098,234 @@ export const createServer = (): Express => {
 - A more secure approach would be to handle token-based communication entirely on the server side
 - In this setup, the client would talk to the Next.js server, then the Next.js server would have access to the Bearer token on the server
 - It would make the request, then send the data back to the client
+
+#### Streaming and Suspense (Partial Pre-Rendering PPR) dir. jh-nextjs-client-and-server-cache/05-suspense-and-diy-streaming
+
+- Which can be used to handle async operations like data fetching
+- Is a mechanism in React for handling asynchronous operations like data fetching
+- Instead of blocking the entire page while waiting for data, we can use Suspense to display a fallback UI
+
+``` jsx
+// inside of the Home component return:
+  <Dashboard />
+```
+
+```jsx
+// inside of app/dashboard.tsx
+export default async function Dashboard() {
+  const stocks = await getStocks();
+
+  return (
+    <div className="grid grid-cols-3 gap-4 mt-5">
+      {stocks.map((stockPromise, index) => (
+        <Suspense key={index} fallback={<div>Loading...</div>}>
+          <StockDisplay stockPromise={stockPromise} />
+        </Suspense>
+      ))}
+    </div>
+  );
+}
+```
+
+```jsx
+// inside of app/dashboard.tsx
+
+import { Suspense, use } from "react";
+
+import { getStocks } from "@/lib/getStocks";
+import { StockInfo } from "@/types";
+
+function StockDisplay({ stockPromise }: { stockPromise: Promise<StockInfo> }) {
+  const { name, ui } = use(stockPromise);
+  return (
+    <div>
+      <div className="font-bold text-3xl">{name}</div>
+      <div>{ui}</div>
+    </div>
+  );
+}
+```
+
+#### Advance Topics
+
+##### DIY Streaming with Server Actions (Go over this 1 more time)
+
+```jsx
+// Create the server action src/get-stocks-action.ts
+
+"use server";
+import { getStocks } from "@/lib/getStocks";
+
+export async function getStocksAction() {
+  return await getStocks();
+}
+```
+
+- This server action will handle fetching our stock data
+
+```jsx
+// inside app/dashboard.tsx
+
+"use client";
+import { Suspense, use, useState, useEffect } from "react";
+
+export default function Dashboard() {
+  const [stocks, setStocks] = useState<StockInfo[]>([]);
+
+  useEffect(() => {
+    getStocksAction().then((stocks) => setStocks(stocks));
+  }, []);
+
+  return (
+    <div className="grid grid-cols-3 gap-4 mt-5">
+      {stocks.map((stockPromise, index) => (
+        <Suspense key={index} fallback={<div>Loading...</div>}>
+          <StockDisplay stockPromise={stockPromise} />
+        </Suspense>
+      ))}
+    </div>
+  );
+}
+```
+
+- Since we're working with server actions, we'll need to convert it into a client component and remove the async keyword
+- We'll also initialize our stock state using useState, but instead of storing an array of stock information, we'll store an array of promises that resolve to stock information
+
+- The above code will result in an error, that basically says "The error message tells us that the stock-with-counter.tsx module isn't in the React Client Manifest."
+
+- Add this component and initialize it
+
+```jsx
+import StockWithCounter from "@/components/stock-with-counter";
+const foo = StockWithCounter;
+```
+
+- This setup avoids the tree-shaking issue and ensures the component is included in the client manifest, and the dashboard loads as expected
+- This DIY streaming approach, where a single server request streams back UI and data, offers a user experience unmatched by other frameworks.
+
+##### Cached Server Actions in NextJS (server actions can return not only data but UI) - dir. (jh-nextjs-client-and-server-cache/04-cacheable-server-actions)
+
+- Server actions can return parts of the UI, which can be cached and reused across multiple components
+
+**NOTE** - Method to intercept routes and check headers on client side
+
+```jsx
+// useCacheableServerAction";
+
+import { useEffect } from "react";
+import sha256 from "crypto-js/sha256";
+
+export function useCacheableServerAction() {
+  useEffect(() => {
+    const { fetch: originalFetch } = window;
+    window.fetch = async (...args) => {
+      let [resource, config] = args;
+      if (
+        // @ts-ignore
+        config?.headers?.["Next-Action"] &&
+        config.method === "POST" &&
+        config.body
+      ) {
+        // @ts-ignore
+        const json = JSON.parse(config.body);
+        const hash = await sha256(
+          // @ts-ignore
+          `${config?.headers?.["Next-Action"]}:${JSON.stringify(json)}`
+        );
+        resource = `?hash=${hash}`;
+      }
+      const response = await originalFetch(resource, config);
+      return response;
+    };
+    return () => {
+      window.fetch = originalFetch;
+    };
+  }, []);
+}
+```
+
+- You can use in client like this:
+
+```jsx
+"use client";
+import { useState, useEffect } from "react";
+
+import { useCacheableServerAction } from "./useCacheableServerAction";
+
+export default function ClientContentSection({
+  onGetCounter,
+  onGetTimer,
+}: {
+  onGetCounter: (start: number) => Promise<React.ReactNode>;
+  onGetTimer: () => Promise<React.ReactNode>;
+}) {
+  const [counter, setCounter] = useState<React.ReactNode>(null);
+  const [timer, setTimer] = useState<React.ReactNode>(null);
+
+  useCacheableServerAction(); // --------> RIGHT HERE
+
+  useEffect(() => {
+    (async () => {
+      setCounter(await onGetCounter(10));
+      setTimer(await onGetTimer());
+    })();
+  }, []);
+
+  return (
+    <>
+      <h1>Client Content Component</h1>
+      <div>{timer}</div>
+      <div>{counter}</div>
+    </>
+  );
+}
+```
+
+###### Understanding the Problem
+
+- Let's imagine we're building a site like Slashdot. Typically, high-traffic sites use a CDN (Content Delivery Network) to handle a lot of the requests and reduce the load on their servers.
+
+- Here's how it works:
+
+- The client makes a request to Slashdot.
+- The CDN intercepts the request.
+- If the CDN has the page cached, it returns it.
+- If not, the CDN forwards the request to the origin server (our Next.js app).
+- The Next.js server returns the page to the CDN.
+- The CDN caches the page and returns it to the client.
+- This is great because it takes a lot of pressure off of our Next.js server, but it usually works on the whole page level.
+
+- Server Actions can return UI
+
+```jsx
+async function getCounter(start: number) {
+  "use server";
+  return <Counter start={start} />;
+}
+
+async function getTimer() {
+  "use server";
+  return <Timer />;
+}
+```
+
+- We can return static HTML, a combination of static HTML and client components, or even full client components, continuing with the Slashdot example, let's say we have a client component for the "Most Discussed" section.
+
+- Here's how it can work with a server action:
+  - The client component makes a server action request to get the "Most Discussed" content.
+  - The server action returns the rendered HTML or client components for that section.
+  - The client component renders the received content.
+
+###### How Server Actions Works (IMPORTANT)
+
+- Server actions work by having the client send a POST request to the same route it's on, but with a special header called **Next-Action**
+- The Next.js server, seeing this header, knows to execute the server action, instead of a normal page request
+  - It does the work, gets the content, and sends it back to the client
+- What gets sent back to the client is "flight data", essentially a serialized version of the UI that's ready to be hydrated on the client-side
+
+1. First, intercept the client's server action request and create a unique hash based on the request (including any arguments passed to the server action). This hash will be used as a key for caching the server action response.
+2. If the hash is found in the cache, return the cached response. If not, let the request go through to the Next.js server, cache the response, and then return it to the client.
+3. Normally, CDNs don't cache any POST, PUT, PATCH, or DELETE requests, so there would be special configuration needed to make this work in a real-world scenario.
+
+##### File Uploads in NextJS App Router Apps dir. jh-nextjs-client-and-server-cache/02-file-uploads
+
