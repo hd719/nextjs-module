@@ -1,0 +1,24 @@
+.main {
+  max-width: 960px;
+  margin: 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  border: 2px solid yellow;
+}
+
+.card {
+  padding: 0.2rem;
+  border: 2px solid green;
+}
+
+@media screen and (max-width: 768px) {
+  .card {
+    width: 100%;
+  }
+}
+
+@media screen and (min-width: 768px) {
+  .card {
+    width: 33%;
+  }
+}
