@@ -12,6 +12,7 @@
 
 - Caches the full route
 - There are 2 types of routes
+
   - Static Routes:
     - Doesn't involve elements that would necessitate re-rendering on the server for each request
     - Build process generates static HTML for these routes, resulting in the same content served on each request
@@ -158,7 +159,7 @@ export async function POST() {
 export default async function APITime() {
   const timeReq = await fetch("http://localhost:8080/time", {
     next: {
-      revalidate: 2
+      revalidate: 2,
     },
   });
 }
@@ -203,7 +204,7 @@ import { Button } from "@/components/ui/button";
 export default function RevalidateAPITimeButton({
   onRevalidate,
 }: {
-  onRevalidate: () => Promise<void>;
+  onRevalidate: () => Promise<void>,
 }) {
   return (
     <Button onClick={async () => await onRevalidate()} className="mt-4">
@@ -240,7 +241,7 @@ import { Button } from "@/components/ui/button";
 export default function RevalidateDBTimeButton({
   onRevalidate,
 }: {
-  onRevalidate: () => Promise<void>;
+  onRevalidate: () => Promise<void>,
 }) {
   return (
     <Button onClick={async () => await onRevalidate()} className="mt-4">
@@ -313,10 +314,10 @@ export default function SubRoute() {
   return (
     <main className="flex flex-col gap-3">
       <div>
-         <Button
+        <Button
           onClick={async () => {
             await revalidateHome();
-            router.push('/');
+            router.push("/");
           }}
         >
           Go Home
@@ -437,6 +438,7 @@ export default function SubRoute() {
 - The server action variant of the local architecture is perfect for small teams, startups, or internal admin tools where simplicity and efficiency are key
 
 - The architecture is simple– here's the flow:
+
   1. Data Fetching (RSC): The app uses a React Server Component (RSC) on the homepage to fetch to-dos from the todos library.
   2. Client-Side Rendering: The RSC passes the fetched data to the client-side component for rendering.
   3. Server Actions: The client utilizes server actions for any updates (adding, marking complete, deleting) to the to-dos.
@@ -469,6 +471,7 @@ export default function SubRoute() {
 - Our Next.js application acts as a client-facing frontend and a backend-for-frontend (BFF), communicating with a REST microservice using server actions
 - Use server actions to talk between the client and the Next.js App Router application inside of the bff-sa directory.
 - Our application architecture involves three main components:s
+
   1. Next.js App (BFF): This acts as a client-facing frontend and a backend-for-frontend (BFF). It handles user interactions, server-side rendering, and communication with the microservice.
   2. Server Actions: These functions, running on the server-side within our Next.js application, provide a secure way to interact with the microservice.
   3. REST Microservice: This independent service handles the application's core logic and data persistence.
@@ -562,7 +565,8 @@ export default nextConfig;
 function postWebhook(event: string, payload: any) {
   console.log("Posting webhook", process.env.FRONTEND_SERVER, event, payload);
   if (process.env.FRONTEND_SERVER) {
-    fetch(`${process.env.FRONTEND_SERVER}/api/callback`, { // to our nextjs application
+    fetch(`${process.env.FRONTEND_SERVER}/api/callback`, {
+      // to our nextjs application
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -587,9 +591,10 @@ export const createServer = (): Express => {
       return res.json(PRIORITIES);
     })
     .get("/todos", async (req, res) => {
-      const info = await decodeJWT<{ sub: string }>(
-        req.cookies["authjs.session-token"]
-      );
+      const info =
+        (await decodeJWT) <
+        { sub: string } >
+        req.cookies["authjs.session-token"];
       if (!info) {
         return res.status(401).json({ message: "Unauthorized" });
       }
@@ -598,9 +603,10 @@ export const createServer = (): Express => {
       return res.json(todos);
     })
     .get("/todo/:id", async (req, res) => {
-      const info = await decodeJWT<{ sub: string }>(
-        req.cookies["authjs.session-token"]
-      );
+      const info =
+        (await decodeJWT) <
+        { sub: string } >
+        req.cookies["authjs.session-token"];
       if (!info) {
         return res.status(401).json({ message: "Unauthorized" });
       }
@@ -610,9 +616,10 @@ export const createServer = (): Express => {
       return res.json(todos);
     })
     .post("/todo", async (req, res) => {
-      const info = await decodeJWT<{ sub: string }>(
-        req.cookies["authjs.session-token"]
-      );
+      const info =
+        (await decodeJWT) <
+        { sub: string } >
+        req.cookies["authjs.session-token"];
       if (!info) {
         return res.status(401).json({ message: "Unauthorized" });
       }
@@ -626,9 +633,10 @@ export const createServer = (): Express => {
       return res.json(newTodo);
     })
     .put("/todo/:id", async (req, res) => {
-      const info = await decodeJWT<{ sub: string }>(
-        req.cookies["authjs.session-token"]
-      );
+      const info =
+        (await decodeJWT) <
+        { sub: string } >
+        req.cookies["authjs.session-token"];
       if (!info) {
         return res.status(401).json({ message: "Unauthorized" });
       }
@@ -644,7 +652,7 @@ export const createServer = (): Express => {
       });
 
       return res.json(newTodo);
-    })
+    });
 
   return app;
 };
@@ -670,15 +678,15 @@ export const createServer = (): Express => {
 - In this setup, the client would talk to the Next.js server, then the Next.js server would have access to the Bearer token on the server
 - It would make the request, then send the data back to the client
 
-### Streaming and Suspense (Partial Pre-Rendering PPR) dir. jh-nextjs-client-and-server-cache/05-suspense-and-diy-streaming
+## Streaming and Suspense (Partial Pre-Rendering PPR) dir. jh-nextjs-client-and-server-cache/05-suspense-and-diy-streaming
 
 - Which can be used to handle async operations like data fetching
 - Is a mechanism in React for handling asynchronous operations like data fetching
 - Instead of blocking the entire page while waiting for data, we can use Suspense to display a fallback UI
 
-``` jsx
+```jsx
 // inside of the Home component return:
-  <Dashboard />
+<Dashboard />
 ```
 
 ```jsx
@@ -717,9 +725,9 @@ function StockDisplay({ stockPromise }: { stockPromise: Promise<StockInfo> }) {
 }
 ```
 
-### Advance Topics
+## Advance Topics
 
-#### DIY Streaming with Server Actions (Go over this 1 more time)
+### DIY Streaming with Server Actions (Go over this 1 more time)
 
 ```jsx
 // Create the server action src/get-stocks-action.ts
@@ -774,7 +782,7 @@ const foo = StockWithCounter;
 - This setup avoids the tree-shaking issue and ensures the component is included in the client manifest, and the dashboard loads as expected
 - This DIY streaming approach, where a single server request streams back UI and data, offers a user experience unmatched by other frameworks.
 
-#### Cached Server Actions in NextJS (server actions can return not only data but UI) - dir. (jh-nextjs-client-and-server-cache/04-cacheable-server-actions)
+### Cached Server Actions in NextJS (server actions can return not only data but UI) - dir. (jh-nextjs-client-and-server-cache/04-cacheable-server-actions)
 
 - Server actions can return parts of the UI, which can be cached and reused across multiple components
 
@@ -827,11 +835,11 @@ export default function ClientContentSection({
   onGetCounter,
   onGetTimer,
 }: {
-  onGetCounter: (start: number) => Promise<React.ReactNode>;
-  onGetTimer: () => Promise<React.ReactNode>;
+  onGetCounter: (start: number) => Promise<React.ReactNode>,
+  onGetTimer: () => Promise<React.ReactNode>,
 }) {
-  const [counter, setCounter] = useState<React.ReactNode>(null);
-  const [timer, setTimer] = useState<React.ReactNode>(null);
+  const [counter, setCounter] = useState < React.ReactNode > null;
+  const [timer, setTimer] = useState < React.ReactNode > null;
 
   useCacheableServerAction(); // --------> RIGHT HERE
 
@@ -852,7 +860,7 @@ export default function ClientContentSection({
 }
 ```
 
-##### Understanding the Problem
+#### Understanding the Problem
 
 - Let's imagine we're building a site like Slashdot. Typically, high-traffic sites use a CDN (Content Delivery Network) to handle a lot of the requests and reduce the load on their servers.
 
@@ -887,7 +895,7 @@ async function getTimer() {
   - The server action returns the rendered HTML or client components for that section.
   - The client component renders the received content.
 
-##### How Server Actions Works (IMPORTANT)
+#### How Server Actions Works (IMPORTANT)
 
 - Server actions work by having the client send a POST request to the same route it's on, but with a special header called **Next-Action**
 - The Next.js server, seeing this header, knows to execute the server action, instead of a normal page request
@@ -898,4 +906,6 @@ async function getTimer() {
 2. If the hash is found in the cache, return the cached response. If not, let the request go through to the Next.js server, cache the response, and then return it to the client.
 3. Normally, CDNs don't cache any POST, PUT, PATCH, or DELETE requests, so there would be special configuration needed to make this work in a real-world scenario.
 
-#### File Uploads in NextJS App Router Apps dir. jh-nextjs-client-and-server-cache/02-file-uploads
+### File Uploads in NextJS App Router Apps dir. jh-nextjs-client-and-server-cache/02-file-uploads
+
+## NextJS 15 Caching (check out 06-nextjs-15-caching in jh-nextjs-client-and-server-cache)
